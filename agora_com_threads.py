@@ -12,23 +12,24 @@ from collections import deque
 import threading
 
 dict = {} #guarda ultimas posicoes dos onibus 
+dict_linhas = {}
+grid = {} #guarda posicoes das trajetorias ja conhecidas
 
 lock = threading.RLock()
 
 num_pontos = 5 #numero de pontos para olhar para tras
 
-grid = {} #guarda posicoes das trajetorias ja conhecidas
-
 n_dec = '3' #numero de casas decimais da key
 
-#conf = SparkConf()
+def encontrar_linhas():
+	with lock:
+		for ordem in dict:
+				if len(dict[ordem]["dados"]) == num_pontos:
+					linha = acha_linha_2(dict[ordem]["dados"])
+					if linha != "":
+						print "ordem {ordem} pertence a linha {linha}".format(ordem = ordem, linha = linha)
+						dict_linhas[ordem] = linha
 
-#conf.setMaster("yarn-client")
-
-#sc = SparkContext(conf = conf)
-#sqlContext = HiveContext(sc)
-
-#sqlContext.setConf("hive.exec.dynamic.partition.mode", "nonstrict")
 
 def get_dados():
 	while(True):
@@ -43,7 +44,7 @@ def get_dados():
 				lat = float(campos[3].replace('"',''))
 				lng = float(campos[4].replace('"',''))
 			except:
-				print linha #linha inicial caira aqui
+				print linha + "Linha Inicial" #linha inicial caira aqui
 			if linha_num == "":
 				with lock:
 					try:
@@ -63,6 +64,7 @@ def get_dados():
 					except IndexError,e:
 						print dict[ordem]
 						print e
+						print "Index Error"
 		time.sleep(60)
 
 threading.Thread(target = get_dados).start()
@@ -101,6 +103,36 @@ def acha_linha(pontos):
 			retorno = linha
 	return retorno
 
+def acha_linha_2(pontos):
+	dict_linhas = {}
+	for ponto in pontos:
+		lat = ponto[0]
+		lng = ponto[1]
+		key = format(lat,'.'+n_dec+'f')+","+format(lng,'.'+n_dec+'f')
+		if key in grid:
+			possibilidades = grid[key]
+			for ponto in possibilidades:
+				p_linha = ponto[0]
+				p_lat = ponto[1]
+				p_lng = ponto[2]
+				d_lat = abs(p_lat - lat)
+				d_long = abs(p_lng - lng)
+				d = d_lat + d_long
+				if p_linha not in dict_linhas:
+					dict_linhas[p_linha] = (d,1)
+				else:
+						dict_linhas[p_linha] = (dict_linhas[p_linha][0] + d,dict_linhas[p_linha][1] + 1)
+	melhor_linha = ""
+	menor_media = 999999
+	for linha in dict_linhas:
+		hits = dict_linhas[linha][1]
+		if hits >= num_pontos *0.8:
+			media = dict_linhas[linha][0] / hits 
+			if media < menor_media:
+				menor_media = media
+				melhor_linha = linha
+	return melhor_linha
+
 def carrega_linha(linha_num):
 	f = open("/home/Natalia/tcc/{linha_num}.csv".format(linha_num = linha_num))
 	f.readline()
@@ -122,13 +154,9 @@ def carrega_grid():
 
 carrega_grid()
 
-dict_linhas = {}
-
-while(True):
-	with lock:
-		for ordem in dict:
-				if len(dict[ordem]["dados"]) == num_pontos:
-					#print "ordem: "+str(ordem)+"\n"
-					linha = acha_linha(dict[ordem]["dados"])
-					print "ACHAMOS LINHA UHUL"
-					dict_linhas[ordem] = linha
+while True:
+	start = time.time()
+	encontrar_linhas()
+	finish = time.time()
+	if finish - start < 60:
+		time.sleep(60 - (finish - start))
