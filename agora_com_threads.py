@@ -30,7 +30,6 @@ def encontrar_linhas():
 						print "ordem {ordem} pertence a linha {linha}".format(ordem = ordem, linha = linha)
 						dict_linhas[ordem] = linha
 
-
 def get_dados():
 	while(True):
 		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/SVA/teste/bus.txt")
@@ -104,7 +103,7 @@ def acha_linha(pontos):
 	return retorno
 
 def acha_linha_2(pontos):
-	dict_linhas = {}
+	dict_d_linhas = {}
 	for ponto in pontos:
 		lat = ponto[0]
 		lng = ponto[1]
@@ -118,16 +117,16 @@ def acha_linha_2(pontos):
 				d_lat = abs(p_lat - lat)
 				d_long = abs(p_lng - lng)
 				d = d_lat + d_long
-				if p_linha not in dict_linhas:
-					dict_linhas[p_linha] = (d,1)
+				if p_linha not in dict_d_linhas:
+					dict_d_linhas[p_linha] = (d,1)
 				else:
-						dict_linhas[p_linha] = (dict_linhas[p_linha][0] + d,dict_linhas[p_linha][1] + 1)
+						dict_d_linhas[p_linha] = (dict_d_linhas[p_linha][0] + d,dict_d_linhas[p_linha][1] + 1)
 	melhor_linha = ""
 	menor_media = 999999
-	for linha in dict_linhas:
-		hits = dict_linhas[linha][1]
+	for linha in dict_d_linhas:
+		hits = dict_d_linhas[linha][1]
 		if hits >= num_pontos *0.8:
-			media = dict_linhas[linha][0] / hits 
+			media = dict_d_linhas[linha][0] / hits 
 			if media < menor_media:
 				menor_media = media
 				melhor_linha = linha
@@ -148,6 +147,8 @@ def carrega_linha(linha_num):
 def carrega_grid():
 	carrega_linha("422")
 	carrega_linha("298")
+	carrega_linha("864a")
+	carrega_linha("864b")
 	#rot = sc.textFile("file:///home/Natalia/tcc/422.csv")
 	#rflt = rot.filter(lambda x: len(x) > 11) #elimina header
 	#rmp = rflt.map(lambda x: ("864",(float(x.split(" ")[1].split(")")[0]),float(x.split(" ")[0].split("(")[1])))).cache()
