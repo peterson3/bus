@@ -81,7 +81,11 @@ def get_dados():
 					dict_linha[linha_num] = [ordem]
 				else:
 					dict_linha[linha_num].append(ordem)
-		time.sleep(60)
+		finish = time.time()
+		if finish - start < 60:
+			time.sleep(60 - (finish - start))
+		else:
+			print "get_dados() demorou mais que 60 segundos"
 
 def acha_linha_2(pontos):
 	dict_d_linhas = {}
