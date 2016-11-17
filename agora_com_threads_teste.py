@@ -26,7 +26,7 @@ def encontrar_linhas():
 						#verifica se linha mudou p/ atualizar dicionarios
 						if ordem in dict_ordem:
 							linha_antiga = dict_ordem[ordem]["linha"]
-							if linha_antiga != linha:	
+							if linha_antiga != "" and linha_antiga != linha:	
 								dict_ordem[ordem]["linha"] = linha
 								dict_linha[linha_antiga].remove(ordem)
 						if linha in dict_linha:
@@ -37,6 +37,8 @@ def encontrar_linhas():
 
 def get_dados():
 	while(True):
+		start = time.time()
+		
 		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/SVA/teste/bus.txt")
 		fr = open("/home/SVA/teste/bus.txt")
 		for linha in fr:
@@ -49,23 +51,27 @@ def get_dados():
 				lng = float(campos[4].replace('"',''))
 			except:
 				print linha + "Linha Inicial" #linha inicial caira aqui
-			if linha_num == "":
+			if linha_num == "": #linha nao informada
 				with lock:
 					try:
-						if data != dict_ordem[ordem]["ultima_data"]:
+						if data != dict_ordem[ordem]["ultima_data"]: #posicao eh nova
+							#verifica se onibus se moveu. no futuro adicionar distancia minima de movimento
 							inserir = True
 							for ponto in dict_ordem[ordem]["pontos"]:
 								if lat == ponto[0] and lng == ponto[1]:
 									inserir = False
 							if inserir:
 								dict_ordem[ordem]["pontos"].append([lat,lng])
-								if len(dict_ordem[ordem]["pontos"]) > num_pontos:
+								dict_ordem[ordem]["ultima_data"] = data
+								dict_ordem[ordem]["info"] = linha
+								if len(dict_ordem[ordem]["pontos"]) > num_pontos: #lista de pontos atingiu o limite de pontos analisados
 									dict_ordem[ordem]["pontos"].popleft()
 					except KeyError:
 						dict_ordem[ordem] = {}
 						dict_ordem[ordem]["ultima_data"] = data
 						dict_ordem[ordem]["pontos"] = deque([[lat,lng]])
 						dict_ordem[ordem]["linha"] = ""
+						dict_ordem[ordem]["info"] = [linha]
 					except IndexError,e:
 						print dict_ordem[ordem]
 						print e
