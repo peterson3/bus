@@ -6,8 +6,8 @@ import os
 from collections import deque
 import threading
 
-dict = {} #guarda ultimas posicoes dos onibus ----> dict[ordem]["dados"/"ultima_data"]
-dict_linhas = {} #guarda linhas descobertas ----> dict_linhas[ordem] = linha
+dict_ordem = {} #guarda info de ordens ----> dict_ordem[ordem]["pontos"/"ultima_data"/"linha"]
+dict_linha = {} #guarda ordens relativas e uma linha ----> dict_linha[linha] = [ordens]
 grid = {} #guarda posicoes das trajetorias ja conhecidas ----> grid[key].append((linha_num,lat,lng))
 
 lock = threading.RLock()
@@ -18,12 +18,22 @@ n_dec = '3' #numero de casas decimais da key
 
 def encontrar_linhas():
 	with lock:
-		for ordem in dict:
-				if len(dict[ordem]["dados"]) == num_pontos:
-					linha = acha_linha_2(dict[ordem]["dados"])
+		for ordem in dict_ordem:
+				if len(dict_ordem[ordem]["pontos"]) == num_pontos:
+					linha = acha_linha_2(dict_ordem[ordem]["pontos"])
 					if linha != "":
 						print "ordem {ordem} pertence a linha {linha}".format(ordem = ordem, linha = linha)
-						dict_linhas[ordem] = linha
+						#verifica se linha mudou p/ atualizar dicionarios
+						if ordem in dict_ordem:
+							linha_antiga = dict_ordem[ordem]["linha"]
+							if linha_antiga != linha:	
+								dict_ordem[ordem]["linha"] = linha
+								dict_linha[linha_antiga].remove(ordem)
+						if linha in dict_linha:
+							if ordem not in dict_linha[linha]:
+								dict_linha[linha].append(ordem)
+						else:
+							dict_linha[linha] = [ordem]
 
 def get_dados():
 	while(True):
@@ -42,58 +52,30 @@ def get_dados():
 			if linha_num == "":
 				with lock:
 					try:
-						if data != dict[ordem]["ultima_data"]:
+						if data != dict_ordem[ordem]["ultima_data"]:
 							inserir = True
-							for ponto in dict[ordem]["dados"]:
+							for ponto in dict_ordem[ordem]["pontos"]:
 								if lat == ponto[0] and lng == ponto[1]:
 									inserir = False
 							if inserir:
-								dict[ordem]["dados"].append([lat,lng])
-								if len(dict[ordem]["dados"]) > num_pontos:
-									dict[ordem]["dados"].popleft()
+								dict_ordem[ordem]["pontos"].append([lat,lng])
+								if len(dict_ordem[ordem]["pontos"]) > num_pontos:
+									dict_ordem[ordem]["pontos"].popleft()
 					except KeyError:
-						dict[ordem] = {}
-						dict[ordem]["ultima_data"] = data
-						dict[ordem]["dados"] = deque([[lat,lng]])
+						dict_ordem[ordem] = {}
+						dict_ordem[ordem]["ultima_data"] = data
+						dict_ordem[ordem]["pontos"] = deque([[lat,lng]])
+						dict_ordem[ordem]["linha"] = ""
 					except IndexError,e:
-						print dict[ordem]
+						print dict_ordem[ordem]
 						print e
 						print "Index Error"
+			else: #if linha_num != ''
+				if linha_num not in dict_linha:
+					dict_linha[linha_num] = [ordem]
+				else:
+					dict_linha[linha_num].append(ordem)
 		time.sleep(60)
-
-def acha_linha(pontos):
-	melhores_linhas = {}
-	for ponto in pontos:
-		lat = ponto[0]
-		lng = ponto[1]
-		key = format(lat,'.'+n_dec+'f')+","+format(lng,'.'+n_dec+'f')
-		try:
-			possibilidades = grid[key]
-			menor_d = 99999
-			melhor_linha = ""
-			for ponto in possibilidades:
-				p_linha = ponto[0]
-				p_lat = ponto[1]
-				p_lng = ponto[2]
-				d_lat = abs(p_lat - lat)
-				d_long = abs(p_lng - lng)
-				d = d_lat + d_long
-				if d < menor_d:
-					menor_d = d
-					melhor_linha = p_linha
-			if melhor_linha in melhores_linhas:
-				melhores_linhas[melhor_linha] += 1
-			else:
-				melhores_linhas[melhor_linha] = 1
-			print possibilidades
-		except KeyError:
-			pass
-	retorno = ""
-	maior_pontuacao = 0
-	for linha in melhores_linhas:
-		if melhores_linhas[linha] > maior_pontuacao:
-			retorno = linha
-	return retorno
 
 def acha_linha_2(pontos):
 	dict_d_linhas = {}
@@ -167,13 +149,13 @@ carrega_grid()
 f = open("dict.txt","w")
 f.write("chave;linha;latitude;longitude")
 with lock:
-	for chave in dict:
+	for chave in dict_ordem:
 		try:
-			dados = dict[chave]["dados"]
+			dados = dict_ordem[chave]["pontos"]
 			for coord in dados:
 				lati = str(coord[0])
 				longi = str(coord[1])
-				f.write(chave+";"+dict_linhas[chave]+";"+lati + ";" + longi + "\n")
+				f.write(chave+";"+dict_ordem[chave]["linha"]+";"+lati + ";" + longi + "\n")
 		except:
 			print chave
 
@@ -181,7 +163,7 @@ f.close()
 
 #gravar posicoes de uma so ordem
 f = open("dict.txt","w")
-dados = dict["B25515"]["dados"]
+dados = dict_ordem["B25515"]["pontos"]
 for coord in dados:
 	lati = str(coord[0])
 	longi = str(coord[1])
