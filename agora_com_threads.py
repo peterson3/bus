@@ -1,10 +1,5 @@
-#from pyspark import SparkContext, SparkConf
-#from pyspark.sql import SQLContext, HiveContext, Row
-#from pyspark.sql.types import *  
 import sys
 import gmplot
-#from pyspark.sql.window import Window
-#import pyspark.sql.functions as func
 import urllib
 import time
 import os
@@ -12,7 +7,7 @@ from collections import deque
 import threading
 
 dict = {} #guarda ultimas posicoes dos onibus 
-dict_linhas = {}
+dict_linhas = {} #guarda linhas descobertas
 grid = {} #guarda posicoes das trajetorias ja conhecidas
 
 lock = threading.RLock()
@@ -65,8 +60,6 @@ def get_dados():
 						print e
 						print "Index Error"
 		time.sleep(60)
-
-threading.Thread(target = get_dados).start()
 
 def acha_linha(pontos):
 	melhores_linhas = {}
@@ -149,15 +142,62 @@ def carrega_grid():
 	carrega_linha("298")
 	carrega_linha("864a")
 	carrega_linha("864b")
-	#rot = sc.textFile("file:///home/Natalia/tcc/422.csv")
-	#rflt = rot.filter(lambda x: len(x) > 11) #elimina header
-	#rmp = rflt.map(lambda x: ("864",(float(x.split(" ")[1].split(")")[0]),float(x.split(" ")[0].split("(")[1])))).cache()
+	carrega_linha("326a")
+	carrega_linha("326b")
+
+def t_encontrar_linhas():
+	while True:
+		start = time.time()
+		encontrar_linhas()
+		finish = time.time()
+		if finish - start < 60:
+			time.sleep(60 - (finish - start))
+		else:
+			print "encontrar linhas demorou mais que 60 segundos"
+
+
+threading.Thread(target = get_dados).start()
+threading.Thread(target = t_encontrar_linhas).start()
 
 carrega_grid()
 
-while True:
-	start = time.time()
-	encontrar_linhas()
-	finish = time.time()
-	if finish - start < 60:
-		time.sleep(60 - (finish - start))
+
+
+#gravar posicoes em arquivo p teste
+f = open("dict.txt","w")
+f.write("chave;linha;latitude;longitude")
+with lock:
+	for chave in dict:
+		try:
+			dados = dict[chave]["dados"]
+			for coord in dados:
+				lati = str(coord[0])
+				longi = str(coord[1])
+				f.write(chave+";"+dict_linhas[chave]+";"+lati + ";" + longi + "\n")
+		except:
+			print chave
+
+f.close()
+
+#gravar posicoes de uma so ordem
+f = open("dict.txt","w")
+dados = dict["B25515"]["dados"]
+for coord in dados:
+	lati = str(coord[0])
+	longi = str(coord[1])
+	f.write(lati + " " + longi + " ")
+
+f.close()
+
+#gravar linhas em csv formatado
+fw = open("linhas.txt","w")
+for linha in ["422","298","864a","864b","326a","326b"]:
+	fw.write("chave;linha;latitude;longitude\n")
+	f = open("/home/Natalia/tcc/{linha_num}.csv".format(linha_num = linha))
+	f.readline()
+	for ponto in f:
+		lng = ponto.split(" ")[0].split("(")[1]
+		lat = ponto.split(" ")[1].split(")")[0]
+		fw.write(linha+";"+linha+";"+lat+";"+lng+"\n")
+
+fw.close()

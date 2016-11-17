@@ -2,12 +2,9 @@ import gmplot
 import googlemaps
 from datetime import datetime
 
-gmap = gmplot.GoogleMapPlotter(-43.4688534, -22.875641699999999, 16)
-
 f = open("/home/Natalia/tcc/422.csv")
 
 lat = []
-
 lng = []
 
 for linha in f:
@@ -22,7 +19,7 @@ for linha in f:
 
 gmap = gmplot.GoogleMapPlotter(-22.875641699999999,-43.4688534, 16)
 
-gmap.scatter(lat, lng, '#3B0B39', size=40, marker=False)
+gmap.scatter(lat, lng, '#3B0B39', size=100, marker=False)
 
 gmap.draw("mymap.html")
 

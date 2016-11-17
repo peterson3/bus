@@ -15,8 +15,8 @@ for linha in f:
 		spl = linha.split()
 		o = float(spl[0].split("(")[1])
 		lng.append(o)
-		o = float(spl[1].split(")")[0])
-		lng.append(o)
+		a = float(spl[1].split(")")[0])
+		lat.append(a)
 
 #grava o html
 
