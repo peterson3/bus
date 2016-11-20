@@ -5,6 +5,9 @@ import time
 import os
 from collections import deque
 import threading
+import web
+
+urls = ('/linhas/(.*)', 'get_linha')
 
 dict_ordem = {} #guarda info de ordens ----> dict_ordem[ordem]["pontos"/"ultima_data"/"linha"]
 dict_linha = {} #guarda ordens relativas e uma linha ----> dict_linha[linha] = [ordens]
@@ -16,19 +19,33 @@ num_pontos = 5 #numero de pontos para olhar para tras
 
 n_dec = '3' #numero de casas decimais da key
 
+def remove_ordem(ordem): #remove ordem do dict_linha
+	counter = 0
+	for linha in dict_linha:
+		if ordem in dict_linha[linha]:
+			dict_linha[linha].remove(ordem)
+			counter += 1
+	if counter > 1:
+		print "removidas {n} ocorrencias da ordem {ordem}. Isso nao devia ter acontecido".format(n = counter, ordem = ordem)
+
 def encontrar_linhas():
 	with lock:
-		for ordem in dict_ordem:
+		for ordem in (ordem for ordem in dict_ordem if dict_ordem[ordem]["linha"]["confiavel"] == False):
 				if len(dict_ordem[ordem]["pontos"]) == num_pontos:
 					linha = acha_linha_2(dict_ordem[ordem]["pontos"])
 					if linha != "":
 						print "ordem {ordem} pertence a linha {linha}".format(ordem = ordem, linha = linha)
 						#verifica se linha mudou p/ atualizar dicionarios
 						if ordem in dict_ordem:
-							linha_antiga = dict_ordem[ordem]["linha"]
-							if linha_antiga != "" and linha_antiga != linha:	
-								dict_ordem[ordem]["linha"] = linha
-								dict_linha[linha_antiga].remove(ordem)
+							linha_antiga = dict_ordem[ordem]["linha"]["num"]
+							print linha_antiga + " linha antiga, linha nova: " + linha
+							if linha_antiga != linha:	
+								dict_ordem[ordem]["linha"]["num"] = linha
+								dict_ordem[ordem]["linha"]["confiavel"] = False
+								if linha_antiga != '':
+									dict_linha[linha_antiga].remove(ordem)
+						else:
+							print "ordem {ordem} nao estava no dicionario".format(ordem = ordem)
 						if linha in dict_linha:
 							if ordem not in dict_linha[linha]:
 								dict_linha[linha].append(ordem)
@@ -38,7 +55,6 @@ def encontrar_linhas():
 def get_dados():
 	while(True):
 		start = time.time()
-		
 		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/SVA/teste/bus.txt")
 		fr = open("/home/SVA/teste/bus.txt")
 		for linha in fr:
@@ -51,9 +67,10 @@ def get_dados():
 				lng = float(campos[4].replace('"',''))
 			except:
 				print linha + "Linha Inicial" #linha inicial caira aqui
+				continue
 			if linha_num == "": #linha nao informada
 				with lock:
-					try:
+					if ordem in dict_ordem:
 						if data != dict_ordem[ordem]["ultima_data"]: #posicao eh nova
 							#verifica se onibus se moveu. no futuro adicionar distancia minima de movimento
 							inserir = True
@@ -61,26 +78,46 @@ def get_dados():
 								if lat == ponto[0] and lng == ponto[1]:
 									inserir = False
 							if inserir:
+								#dict_ordem[ordem]["linha"]["num"] = ""
+								dict_ordem[ordem]["linha"]["confiavel"] = False 
 								dict_ordem[ordem]["pontos"].append([lat,lng])
 								dict_ordem[ordem]["ultima_data"] = data
-								dict_ordem[ordem]["info"] = linha
+								dict_ordem[ordem]["info"] = campos
 								if len(dict_ordem[ordem]["pontos"]) > num_pontos: #lista de pontos atingiu o limite de pontos analisados
 									dict_ordem[ordem]["pontos"].popleft()
-					except KeyError:
+					else:
 						dict_ordem[ordem] = {}
 						dict_ordem[ordem]["ultima_data"] = data
 						dict_ordem[ordem]["pontos"] = deque([[lat,lng]])
-						dict_ordem[ordem]["linha"] = ""
-						dict_ordem[ordem]["info"] = [linha]
-					except IndexError,e:
-						print dict_ordem[ordem]
-						print e
-						print "Index Error"
-			else: #if linha_num != ''
-				if linha_num not in dict_linha:
+						dict_ordem[ordem]["linha"] = {}
+						dict_ordem[ordem]["linha"]["num"] = ""
+						dict_ordem[ordem]["linha"]["confiavel"] = False
+						dict_ordem[ordem]["info"] = campos
+			else: #if linha_num != '' se linha foi informada
+				#tira ordem da linha anterior
+				remove_ordem(ordem)
+				#inclui ordem na nova linha
+				if linha_num not in dict_linha: #linha nao esta no dicionario
 					dict_linha[linha_num] = [ordem]
 				else:
 					dict_linha[linha_num].append(ordem)
+				#inclui/atualiza ordem no dict_ordem
+				if ordem not in dict_ordem: #ordem nao esta no dicionario
+					dict_ordem[ordem] = {}
+					dict_ordem[ordem]["ultima_data"] = data
+					dict_ordem[ordem]["pontos"] = deque([[lat,lng]])
+					dict_ordem[ordem]["linha"] = {}
+					dict_ordem[ordem]["linha"]["num"] = linha_num
+					dict_ordem[ordem]["linha"]["confiavel"] = True
+					dict_ordem[ordem]["info"] = campos
+				else:
+					dict_ordem[ordem]["ultima_data"] = data
+					dict_ordem[ordem]["pontos"].append([lat,lng])
+					dict_ordem[ordem]["info"] = campos
+					dict_ordem[ordem]["linha"]["num"] = linha_num
+					dict_ordem[ordem]["linha"]["confiavel"] = True
+					if len(dict_ordem[ordem]["pontos"]) > num_pontos: #lista de pontos atingiu o limite de pontos analisados
+									dict_ordem[ordem]["pontos"].popleft()					
 		finish = time.time()
 		if finish - start < 60:
 			time.sleep(60 - (finish - start))
@@ -153,13 +190,56 @@ threading.Thread(target = t_encontrar_linhas).start()
 
 carrega_grid()
 
+##comeca servidor
 
+app = web.application(urls, globals())
+
+class get_linha:
+	def GET(self, linha):
+		with lock:
+			if linha in dict_linha:
+				ordens = dict_linha[linha]
+				retorno = '{"COLUMNS":["DATAHORA","ORDEM","LINHA","LATITUDE","LONGITUDE","VELOCIDADE","DIRECAO"],"DATA":[['
+				for ordem in ordens:
+					if ordem in dict_ordem:
+						campos = dict_ordem[ordem]["info"]
+						retorno = retorno + '"' + campos[0] + '","' + campos[1]+ '",' + campos[2] + "," + campos[3] + "," + campos[4] + "," + campos[5][:-1] + ",0]]}"
+					else:
+						return "deu ruim na ordem "+ordem
+				return retorno
+			else:
+				return "777 deu ruim"
+
+app.run()
+
+#funcoes de teste
+
+counter = 0
+lista_ordens = []
+with lock:
+	for linha in dict_linha:
+		lista = dict_linha[linha]		
+		for ordem in lista:
+			lista_ordens.append(ordem)
+
+print counter
+
+counter = 0
+with lock:
+	for ordem in dict_ordem:
+		#if dict_ordem[ordem]["linha"]["confiavel"] == False and dict_ordem[ordem]["linha"]["num"] != '':
+		if dict_ordem[ordem]["linha"]["num"] != '':
+			counter+=1
+			#if ordem not in lista_ordens:
+			#	print ordem
+
+print counter
 
 #gravar posicoes em arquivo p teste
 f = open("dict.txt","w")
 f.write("chave;linha;latitude;longitude")
 with lock:
-	for chave in dict_ordem:
+	for chave in (ordem for ordem in dict_ordem if dict_ordem[ordem]["linha"]["confiavel"] == False and dict_ordem[ordem]["linha"]["num"] != ""):
 		try:
 			dados = dict_ordem[chave]["pontos"]
 			for coord in dados:
