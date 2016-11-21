@@ -36,3 +36,12 @@ directions_result = gmaps.directions("Plaza Shopping Niteroi",
 directions_result[0]["legs"][0]['steps'][1]['transit_details']['line']['short_name']
 # Geocoding an address
 geocode_result = gmaps.geocode('1600 Amphitheatre Parkway, Mountain View, CA')
+
+#####agua
+
+https://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=AIzaSyA1Ta280qT3yWu9ZnkNrDtJjUWlOSb3FYs
+	
+reverse_geocode_result = gmaps.reverse_geocode((-22.965223000000002, -43.203460999999997))
+
+for item in reverse_geocode_result:
+	if any(x in item for x in ['Water','Sea', 'Lake', 'Ocean'])

@@ -199,14 +199,14 @@ class get_linha:
 		with lock:
 			if linha in dict_linha:
 				ordens = dict_linha[linha]
-				retorno = '{"COLUMNS":["DATAHORA","ORDEM","LINHA","LATITUDE","LONGITUDE","VELOCIDADE","DIRECAO"],"DATA":[['
+				retorno = '{"COLUMNS":["DATAHORA","ORDEM","LINHA","LATITUDE","LONGITUDE","VELOCIDADE","DIRECAO"],"DATA":['
 				for ordem in ordens:
 					if ordem in dict_ordem:
 						campos = dict_ordem[ordem]["info"]
-						retorno = retorno + '"' + campos[0] + '","' + campos[1]+ '",' + campos[2] + "," + campos[3] + "," + campos[4] + "," + campos[5][:-1] + ",0]]}"
+						retorno = retorno + '["' + campos[0] + '","' + campos[1]+ '",' + campos[2] + "," + campos[3].replace('"','') + "," + campos[4].replace('"','') + "," + campos[5][:-1] + ",0],"
 					else:
 						return "deu ruim na ordem "+ordem
-				return retorno
+				return retorno[:-1]+"]}"
 			else:
 				return "777 deu ruim"
 
