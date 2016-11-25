@@ -7,7 +7,7 @@ from collections import deque
 import threading
 import web
 
-urls = ('/linhas/(.*)', 'get_linha')
+urls = ('/linhas', 'list_linhas','/linhas/(.*)', 'get_linha')
 
 dict_ordem = {} #guarda info de ordens ----> dict_ordem[ordem]["pontos"/"ultima_data"/"linha"]
 dict_linha = {} #guarda ordens relativas e uma linha ----> dict_linha[linha] = [ordens]
@@ -158,13 +158,16 @@ def carrega_linha(linha_num):
 	f = open("/home/Natalia/tcc/{linha_num}.csv".format(linha_num = linha_num))
 	f.readline()
 	for ponto in f:
-		lng = float(ponto.split(" ")[0].split("(")[1])
-		lat = float(ponto.split(" ")[1].split(")")[0])
-		key = format(lat,'.'+n_dec+'f')+","+format(lng,'.'+n_dec+'f')
-		if key in grid:
-			grid[key].append((linha_num,lat,lng))
-		else:
-			grid[key] = []
+		try:
+			lng = float(ponto.split(" ")[0].split("(")[1])
+			lat = float(ponto.split(" ")[1].split(")")[0])
+			key = format(lat,'.'+n_dec+'f')+","+format(lng,'.'+n_dec+'f')
+			if key in grid:
+				grid[key].append((linha_num,lat,lng))
+			else:
+				grid[key] = []
+		except:
+			print linha_num
 
 def carrega_grid():
 	carrega_linha("422")
@@ -173,6 +176,12 @@ def carrega_grid():
 	carrega_linha("864b")
 	carrega_linha("326a")
 	carrega_linha("326b")
+	#carrega_linha("908b")
+	#carrega_linha("908a")
+	#carrega_linha("778b")
+	#carrega_linha("778a")
+	#carrega_linha("455a")
+	#carrega_linha("455b")
 
 def t_encontrar_linhas():
 	while True:
@@ -209,6 +218,15 @@ class get_linha:
 				return retorno[:-1]+"]}"
 			else:
 				return "777 deu ruim"
+
+class list_linhas:
+	def GET(self):
+		with lock:
+			retorno = '{"COLUMNS":["DATAHORA","ORDEM","LINHA","LATITUDE","LONGITUDE","VELOCIDADE","DIRECAO"],"DATA":['
+			for ordem in dict_ordem:
+				campos = dict_ordem[ordem]["info"]
+				retorno = retorno + '["' + campos[0] + '","' + campos[1]+ '",' + campos[2] + "," + campos[3].replace('"','') + "," + campos[4].replace('"','') + "," + campos[5][:-1] + ",0],"
+			return retorno[:-1]+"]}"
 
 app.run()
 
@@ -253,11 +271,13 @@ f.close()
 
 #gravar posicoes de uma so ordem
 f = open("dict.txt","w")
-dados = dict_ordem["B25515"]["pontos"]
+ords = "A29005"
+dados = dict_ordem[ords]["pontos"]
 for coord in dados:
 	lati = str(coord[0])
 	longi = str(coord[1])
 	f.write(lati + " " + longi + " ")
+	print ords+";"+dict_ordem[ords]["linha"]["num"]+";"+lati + ";" + longi + ";"
 
 f.close()
 
