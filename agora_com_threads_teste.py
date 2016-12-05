@@ -6,6 +6,8 @@ import os
 from collections import deque
 import threading
 import web
+import json
+from PIL import Image
 
 urls = ('/linhas', 'list_linhas','/linhas/(.*)', 'get_linha')
 
@@ -19,6 +21,22 @@ num_pontos = 5 #numero de pontos para olhar para tras
 
 n_dec = '3' #numero de casas decimais da key
 
+f_log_agua = open("log_agua.txt","w")
+f_log_dist = open("log_dist.txt","w")
+
+def is_agua(lat,lng):	
+	image = urllib.URLopener()
+	url = "http://maps.googleapis.com/maps/api/staticmap?scale=2&center={"+lat+","+lng+"}&zoom=13&size=1024x160&sensor=false&visual_refresh=true&style=feature:water|color:0x00FF00&style=element:labels|visibility:off&style=feature:transit|visibility:off&style=feature:poi|visibility:off&style=feature:road|visibility:off&style=feature:administrative|visibility:off"
+	print url
+	image.retrieve(url,"pixel.jpg")
+	
+	im = Image.open("pixel.jpg").convert('RGB')
+	rgb = im.getpixel((512,80))
+	if rgb == (0,255,0):
+		f_log_agua.write(lat+","+lng+"\n")
+		return True
+
+
 def remove_ordem(ordem): #remove ordem do dict_linha
 	counter = 0
 	for linha in dict_linha:
@@ -28,9 +46,15 @@ def remove_ordem(ordem): #remove ordem do dict_linha
 	if counter > 1:
 		print "removidas {n} ocorrencias da ordem {ordem}. Isso nao devia ter acontecido".format(n = counter, ordem = ordem)
 
+def pode_analisar(pontos):
+	tamanho = len(pontos)
+	for ponto in pontos:
+		
+
 def encontrar_linhas():
 	with lock:
 		for ordem in (ordem for ordem in dict_ordem if dict_ordem[ordem]["linha"]["confiavel"] == False):
+				#se numero de pontos condiz com o necessario p/ analise
 				if len(dict_ordem[ordem]["pontos"]) == num_pontos:
 					linha = acha_linha_2(dict_ordem[ordem]["pontos"])
 					if linha != "":
@@ -55,8 +79,8 @@ def encontrar_linhas():
 def get_dados():
 	while(True):
 		start = time.time()
-		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/SVA/teste/bus.txt")
-		fr = open("/home/SVA/teste/bus.txt")
+		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/nataliapipas/bus.txt")
+		fr = open("/home/nataliapipas/bus.txt")
 		for linha in fr:
 			campos = linha.split(",")
 			ordem = campos[1]
@@ -64,10 +88,13 @@ def get_dados():
 			linha_num = campos[2]
 			try:
 				lat = float(campos[3].replace('"',''))
-				lng = float(campos[4].replace('"',''))
+				lng = float(campos[4].replace('"',''))				
 			except:
 				print linha + "Linha Inicial" #linha inicial caira aqui
 				continue
+			#verifica se ponto eh agua. ignora ponto caso positivo. comentado por questoes de performance
+			#if is_agua(str(lat),str(lng)):
+			#	continue
 			if linha_num == "": #linha nao informada
 				with lock:
 					if ordem in dict_ordem:
@@ -155,7 +182,7 @@ def acha_linha_2(pontos):
 	return melhor_linha
 
 def carrega_linha(linha_num):
-	f = open("/home/Natalia/tcc/{linha_num}.csv".format(linha_num = linha_num))
+	f = open("/home/nataliapipas/linhas/{linha_num}.csv".format(linha_num = linha_num))
 	f.readline()
 	for ponto in f:
 		try:
@@ -170,18 +197,19 @@ def carrega_linha(linha_num):
 			print linha_num
 
 def carrega_grid():
-	carrega_linha("422")
-	carrega_linha("298")
 	carrega_linha("864a")
 	carrega_linha("864b")
+	carrega_linha("908b")
+	carrega_linha("908a")
+	carrega_linha("778b")
+	carrega_linha("778a")
+	carrega_linha("455a")
+	carrega_linha("455b")
+	carrega_linha("422a")
+	carrega_linha("422b")
 	carrega_linha("326a")
 	carrega_linha("326b")
-	#carrega_linha("908b")
-	#carrega_linha("908a")
-	#carrega_linha("778b")
-	#carrega_linha("778a")
-	#carrega_linha("455a")
-	#carrega_linha("455b")
+	carrega_linha("298")
 
 def t_encontrar_linhas():
 	while True:
@@ -205,6 +233,33 @@ app = web.application(urls, globals())
 
 class get_linha:
 	def GET(self, linha):
+		##teste
+		with lock:
+			if linha in dict_linha:
+				ordens = dict_linha[linha]
+				retorno = {}
+				retorno["DATA"] = []
+				for ordem in ordens:
+					if ordem in dict_ordem:
+						campos = dict_ordem[ordem]["info"]
+						itens = []
+						itens.append(campos[0])
+						itens.append(campos[1])
+						try:
+							itens.append(float(dict_ordem[ordem]["linha"]["num"]))
+						except:
+							itens.append(dict_ordem[ordem]["linha"]["num"])
+						itens.append(float(campos[3].replace('"','')))
+						itens.append(float(campos[4].replace('"','')))
+						itens.append(float(campos[5][:-1]))
+						itens.append(0)
+						retorno["DATA"].append(itens)
+					else:
+						return "deu ruim na ordem "+ordem
+			else:
+				return '{"COLUMNS":["MENSAGEM"],"DATA":[["A requisicao foi processada corretamente, porem nenhum registro foi encontrado"]]}'
+		retorno["COLUMNS"] = ["DATAHORA","ORDEM","LINHA","LATITUDE","LONGITUDE","VELOCIDADE","DIRECAO"]
+		return json.dumps(retorno)
 		with lock:
 			if linha in dict_linha:
 				ordens = dict_linha[linha]
@@ -217,16 +272,37 @@ class get_linha:
 						return "deu ruim na ordem "+ordem
 				return retorno[:-1]+"]}"
 			else:
-				return "777 deu ruim"
+				return '{"COLUMNS":["MENSAGEM"],"DATA":[["A requisicao foi processada corretamente, porem nenhum registro foi encontrado"]]}'
 
 class list_linhas:
 	def GET(self):
+		##teste
+		retorno = {}
+		with lock:
+			retorno["DATA"] = []
+			for ordem in dict_ordem:
+				campos = dict_ordem[ordem]["info"]
+				itens = []
+				itens.append(campos[0])
+				itens.append(campos[1])
+				try:
+					itens.append(float(dict_ordem[ordem]["linha"]["num"]))
+				except:
+					itens.append(dict_ordem[ordem]["linha"]["num"])
+				itens.append(float(campos[3].replace('"','')))
+				itens.append(float(campos[4].replace('"','')))
+				itens.append(float(campos[5][:-1]))
+				itens.append(0)
+				retorno["DATA"].append(itens)
+		retorno["COLUMNS"] = ["DATAHORA","ORDEM","LINHA","LATITUDE","LONGITUDE","VELOCIDADE","DIRECAO"]
+		return json.dumps(retorno)
 		with lock:
 			retorno = '{"COLUMNS":["DATAHORA","ORDEM","LINHA","LATITUDE","LONGITUDE","VELOCIDADE","DIRECAO"],"DATA":['
 			for ordem in dict_ordem:
 				campos = dict_ordem[ordem]["info"]
 				retorno = retorno + '["' + campos[0] + '","' + campos[1]+ '",' + campos[2] + "," + campos[3].replace('"','') + "," + campos[4].replace('"','') + "," + campos[5][:-1] + ",0],"
 			return retorno[:-1]+"]}"
+
 
 app.run()
 
