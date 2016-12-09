@@ -7,7 +7,8 @@ from collections import deque
 import threading
 import web
 import json
-from PIL import Image
+#from PIL import Image
+import datetime
 
 urls = ('/linhas', 'list_linhas','/linhas/(.*)', 'get_linha')
 
@@ -46,10 +47,23 @@ def remove_ordem(ordem): #remove ordem do dict_linha
 	if counter > 1:
 		print "removidas {n} ocorrencias da ordem {ordem}. Isso nao devia ter acontecido".format(n = counter, ordem = ordem)
 
-def pode_analisar(pontos):
+def pode_analisar(pontos): #verifica se onibus percorreu distancia minima em pelo menos metade de seus logs
 	tamanho = len(pontos)
-	for ponto in pontos:
-		
+	if tamanho < num_pontos:
+		return False
+	if tamanho > num_pontos:
+		raise ValueError("Mais pontos do que podia: "+str(pontos))
+	count_pontos = 0
+	count_limite = num_pontos/2
+	for i in range(0,len(pontos)-1):
+		pontoA = pontos[i]
+		pontoB = pontos[i + 1]
+		if abs(pontoA[0] - pontoB[0]) < 0.0001 and abs(pontoA[1] - pontoB[1]) < 0.0001:
+			count_pontos += 1
+	if count_pontos > count_limite:
+		return False
+	return True
+	
 
 def encontrar_linhas():
 	with lock:
@@ -79,8 +93,8 @@ def encontrar_linhas():
 def get_dados():
 	while(True):
 		start = time.time()
-		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/nataliapipas/bus.txt")
-		fr = open("/home/nataliapipas/bus.txt")
+		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/Natalia/tcc/bus3.txt")
+		fr = open("/home/Natalia/tcc/bus3.txt")
 		for linha in fr:
 			campos = linha.split(",")
 			ordem = campos[1]
@@ -99,8 +113,10 @@ def get_dados():
 				with lock:
 					if ordem in dict_ordem:
 						if data != dict_ordem[ordem]["ultima_data"]: #posicao eh nova
-							#verifica se onibus se moveu. no futuro adicionar distancia minima de movimento
+							#verifica se onibus se moveu
 							inserir = True
+							if(datetime.datetime.strptime(data, '%m-%d-%Y %H:%M:%S') < datetime.datetime.now() - datetime.timedelta(hours=3)):
+								inserir = False
 							for ponto in dict_ordem[ordem]["pontos"]:
 								if lat == ponto[0] and lng == ponto[1]:
 									inserir = False
@@ -182,7 +198,7 @@ def acha_linha_2(pontos):
 	return melhor_linha
 
 def carrega_linha(linha_num):
-	f = open("/home/nataliapipas/linhas/{linha_num}.csv".format(linha_num = linha_num))
+	f = open("/home/Natalia/tcc/{linha_num}.csv".format(linha_num = linha_num))
 	f.readline()
 	for ponto in f:
 		try:
@@ -321,9 +337,10 @@ print counter
 counter = 0
 with lock:
 	for ordem in dict_ordem:
-		#if dict_ordem[ordem]["linha"]["confiavel"] == False and dict_ordem[ordem]["linha"]["num"] != '':
-		if dict_ordem[ordem]["linha"]["num"] != '':
+		if dict_ordem[ordem]["linha"]["confiavel"] == False and dict_ordem[ordem]["linha"]["num"] != '':
+		#if dict_ordem[ordem]["linha"]["num"] == '':
 			counter+=1
+			#print dict_ordem[ordem]
 			#if ordem not in lista_ordens:
 			#	print ordem
 
@@ -354,6 +371,14 @@ for coord in dados:
 	longi = str(coord[1])
 	f.write(lati + " " + longi + " ")
 	print ords+";"+dict_ordem[ords]["linha"]["num"]+";"+lati + ";" + longi + ";"
+
+f.close()
+
+f = open("linhas_count.txt","w")
+with lock:
+	for linha in dict_linha:
+		if linha in ["864a","864b","908b","908a","778b","778a","455a","455b","422a","422b","326a","326b","298"]:
+			f.write(linha+";"+str(len(linha))+"\n")
 
 f.close()
 
