@@ -63,7 +63,81 @@ def pode_analisar(pontos): #verifica se onibus percorreu distancia minima em pel
 	if count_pontos > count_limite:
 		return False
 	return True
-	
+
+
+def acha_linha_4(pontos):
+	dict_d_linhas = {} # dicionario de possiveis melhores linhas
+	pontuacao_maxima = 100 # pode diminuir caso nao haja nenhuma linha possivel na celula
+	for ponto in pontos: #pontos por onde a ordem passou
+		lat = ponto[0]
+		lng = ponto[1]
+		key = format(lat,'.'+n_dec+'f')+","+format(lng,'.'+n_dec+'f')
+		print "key"
+		print key
+		if key in grid and len(grid[key]) > 0: # se existe alguma linha passando pela celula do ponto
+			possibilidades = grid[key] # busca linhas que passam pela mesma celula que o ponto
+			if len(possibilidades) == 0: # se nao ha linha possivel
+				pontuacao_maxima -= 100/num_pontos
+			print "possibilidades"
+			print possibilidades
+			linha_pontuacao = {} # guarda a pontuacao de uma linha e a distancia
+			for i in range (0,len(possibilidades)):
+				poss1 = possibilidades[i]
+				print "poss1"
+				print poss1
+				poss1_linha = poss1[0]
+				if poss1_linha not in linha_pontuacao:
+					linha_pontuacao[poss1_linha] = {}
+					linha_pontuacao[poss1_linha]["dist"] = 9999999999
+				poss1_lat = poss1[1]
+				poss1_lng = poss1[2]
+				if len(possibilidades) > i + 1: # se eh possivel pegar um ponto a frente
+					poss2 = possibilidades[i + 1]
+					poss2_linha = poss2[0]
+					if poss2_linha == poss1_linha and poss2 != poss1:
+						print "ponto"
+						print ponto
+						print "poss2"
+						print poss2
+						dist = distance_to_line(ponto,[poss1_lat,poss1_lng],[poss2[1],poss2[2]]) # calcula a distancia entre o ponto e a linha formada pelas duas possibilidades
+						if dist < linha_pontuacao[poss1_linha]["dist"]:
+							linha_pontuacao[poss1_linha]["dist"] = dist
+				else: # calcular distancia somente entre o ponto e a possibilidade
+					dist = distance_to_point(ponto,[poss1_lat,poss1_lng])
+					if dist < linha_pontuacao[poss1_linha]["dist"]:
+							linha_pontuacao[poss1_linha]["dist"] = dist
+			#calcula Req e v
+			req_inv = 0
+			print "linha_pontuacao"
+			print linha_pontuacao
+			for linha in linha_pontuacao:
+				req_inv += 1/float(linha_pontuacao[linha]["dist"])
+			print "req_inv"
+			print req_inv
+			req = 1/float(req_inv)
+			print "req"
+			print req
+			v = req * 100
+			#calcula pontuacao de cada linha
+			for linha in linha_pontuacao:
+				i = v/float(linha_pontuacao[linha]["dist"]) # i eh a pontuacao (max eh 100)
+				if linha in dict_d_linhas:
+					dict_d_linhas[linha] += i
+				else:
+					dict_d_linhas[linha] = i
+		else: # se nao ha pontos na celula
+			pontuacao_maxima -= 100/num_pontos
+	# calcula soma da pontuacao de todas as linhas
+	soma = 0
+	for linha in dict_d_linhas:
+		soma += dict_d_linhas[linha]
+	# calcula pontuacao final de cada linha
+	dict_final = {}
+	for linha in dict_d_linhas:
+		dict_final[linha] = dict_d_linhas[linha] * pontuacao_maxima / float(soma)
+	dict_final[""] = 100 - pontuacao_maxima
+	return dict_final
+
 
 def encontrar_linhas():
 	with lock:
@@ -93,8 +167,8 @@ def encontrar_linhas():
 def get_dados():
 	while(True):
 		start = time.time()
-		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/Natalia/tcc/bus3.txt")
-		fr = open("/home/Natalia/tcc/bus3.txt")
+		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/tr569752/bus/bus3.txt")
+		fr = open("/home/tr569752/bus/bus3.txt")
 		for linha in fr:
 			campos = linha.split(",")
 			ordem = campos[1]
@@ -116,9 +190,11 @@ def get_dados():
 							#verifica se onibus se moveu
 							inserir = True
 							if(datetime.datetime.strptime(data, '%m-%d-%Y %H:%M:%S') < datetime.datetime.now() - datetime.timedelta(hours=3)):
+								print datetime.datetime.strptime(data, '%m-%d-%Y %H:%M:%S')
 								inserir = False
 							for ponto in dict_ordem[ordem]["pontos"]:
 								if lat == ponto[0] and lng == ponto[1]:
+									print ponto
 									inserir = False
 							if inserir:
 								#dict_ordem[ordem]["linha"]["num"] = ""
@@ -198,7 +274,7 @@ def acha_linha_2(pontos):
 	return melhor_linha
 
 def carrega_linha(linha_num):
-	f = open("/home/Natalia/tcc/{linha_num}.csv".format(linha_num = linha_num))
+	f = open("/home/tr569752/bus/linhas/{linha_num}.csv".format(linha_num = linha_num))
 	f.readline()
 	for ponto in f:
 		try:
@@ -215,12 +291,12 @@ def carrega_linha(linha_num):
 def carrega_grid():
 	carrega_linha("864a")
 	carrega_linha("864b")
-	carrega_linha("908b")
-	carrega_linha("908a")
-	carrega_linha("778b")
-	carrega_linha("778a")
-	carrega_linha("455a")
-	carrega_linha("455b")
+	#carrega_linha("908b")
+	#carrega_linha("908a")
+	#carrega_linha("778b")
+	#carrega_linha("778a")
+	#carrega_linha("455a")
+	#carrega_linha("455b")
 	carrega_linha("422a")
 	carrega_linha("422b")
 	carrega_linha("326a")

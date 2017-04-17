@@ -125,7 +125,9 @@ def acha_linha_4(pontos):
 		lat = ponto[0]
 		lng = ponto[1]
 		key = format(lat,'.'+n_dec+'f')+","+format(lng,'.'+n_dec+'f')
-		if key in grid: # se existe alguma linha passando pela celula do ponto
+		print "key"
+		print key
+		if key in grid and len(grid[key]) > 0: # se existe alguma linha passando pela celula do ponto
 			possibilidades = grid[key] # busca linhas que passam pela mesma celula que o ponto
 			if len(possibilidades) == 0: # se nao ha linha possivel
 				pontuacao_maxima -= 100/num_pontos
