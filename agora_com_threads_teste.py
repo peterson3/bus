@@ -9,6 +9,7 @@ import web
 import json
 #from PIL import Image
 import datetime
+import math
 
 urls = ('/linhas', 'list_linhas','/linhas/(.*)', 'get_linha')
 
@@ -36,6 +37,29 @@ def is_agua(lat,lng):
 	if rgb == (0,255,0):
 		f_log_agua.write(lat+","+lng+"\n")
 		return True
+
+
+def distance_to_line(p,pr1,pr2):
+	print "pontos"
+	print p
+	print pr1
+	print pr2
+	x_diff = pr2[0] - pr1[0]
+	print "x dif"
+	print x_diff
+	y_diff = pr2[1] - pr1[1]
+	print "y dif"
+	print y_diff
+	num = abs(y_diff*p[0] - x_diff*p[1] + pr2[0]*pr1[1] - pr2[1]*pr1[0])
+	print "num"
+	print num
+	den = math.sqrt(y_diff**2 + x_diff**2)
+	print "den"
+	print den
+	return num / den
+
+def distance_to_point(p1,p2):
+	return math.hypot(p2[0] - p1[0], p2[1] - p1[1])
 
 
 def remove_ordem(ordem): #remove ordem do dict_linha
@@ -194,7 +218,7 @@ def get_dados():
 								inserir = False
 							for ponto in dict_ordem[ordem]["pontos"]:
 								if lat == ponto[0] and lng == ponto[1]:
-									print ponto
+									#print ponto
 									inserir = False
 							if inserir:
 								#dict_ordem[ordem]["linha"]["num"] = ""
@@ -242,6 +266,48 @@ def get_dados():
 			time.sleep(60 - (finish - start))
 		else:
 			print "get_dados() demorou mais que 60 segundos"
+
+
+# retorna melhor linha a partir dos pontos por onde a ordem passou
+def acha_linha_3(pontos):
+	dict_d_linhas = {} # dicionario de possiveis melhores linhas
+	counter_prob = 0
+	for ponto in pontos: #pontos por onde a ordem passou
+		lat = ponto[0]
+		lng = ponto[1]
+		key = format(lat,'.'+n_dec+'f')+","+format(lng,'.'+n_dec+'f')
+		if key in grid: # se existe alguma linha passando pela celula do ponto
+			possibilidades = grid[key] # busca linhas que passam pela mesma celula que o ponto
+			for p_ponto in possibilidades:
+				menor_dist = 99999999
+				p_linha = p_ponto[0]
+				p_lat = p_ponto[1]
+				p_lng = p_ponto[2]
+				for p2_ponto in (y for y in possibilidades if p_linha == p2_ponto[0] and p2_ponto[1] < p_lat): # comparando pares pontos de mesma linha, sem repeticao  
+					p2_linha = p2_ponto[0]
+					p2_lat = p2_ponto[1]
+					p2_lng = p2_ponto[2]
+					dist = distance_to_line(ponto,p_ponto,p2_ponto) ###########
+					if dist < menor_dist:
+						menor_dist = dist
+				if p_linha not in dict_d_linhas: # se primeira vez que a linha aparece nessa busca
+					dict_d_linhas[p_linha] = (d,1)
+					counter_prob += 1
+				else:
+					counter_prob += 1
+					for outro_ponto in dict_d_linhas:
+						dict_d_linhas[p_linha] = (dict_d_linhas[p_linha][0] + d,dict_d_linhas[p_linha][1] + 1)
+	melhor_linha = ""
+	menor_media = 999999
+	for linha in dict_d_linhas:
+		hits = dict_d_linhas[linha][1]
+		if hits >= num_pontos *0.8:
+			media = dict_d_linhas[linha][0] / hits 
+			if media < menor_media:
+				menor_media = media
+				melhor_linha = linha
+	return melhor_linha
+
 
 def acha_linha_2(pontos):
 	dict_d_linhas = {}
