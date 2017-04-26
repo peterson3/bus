@@ -21,7 +21,7 @@ lock = threading.RLock()
 
 num_pontos = 5 #numero de pontos para olhar para tras
 
-n_dec = '3' #numero de casas decimais da key
+n_dec = '2' #numero de casas decimais da key
 
 f_log_agua = open("log_agua.txt","w")
 f_log_dist = open("log_dist.txt","w")
@@ -115,10 +115,12 @@ def acha_linha_4(pontos):
 					linha_pontuacao[poss1_linha]["dist"] = 9999999999
 				poss1_lat = poss1[1]
 				poss1_lng = poss1[2]
-				if len(possibilidades) > i + 1: # se eh possivel pegar um ponto a frente
+				soUmPonto = True # se so um ponto deve ser analisado
+				if len(possibilidades) > i + 1: # se eh possivel olhar um ponto a frente
 					poss2 = possibilidades[i + 1]
 					poss2_linha = poss2[0]
-					if poss2_linha == poss1_linha and poss2 != poss1:
+					if poss2_linha == poss1_linha and poss2 != poss1: # se ponto seguinte pertence a mesma linha
+						soUmPonto = False
 						print "ponto"
 						print ponto
 						print "poss2"
@@ -126,10 +128,15 @@ def acha_linha_4(pontos):
 						dist = distance_to_line(ponto,[poss1_lat,poss1_lng],[poss2[1],poss2[2]]) # calcula a distancia entre o ponto e a linha formada pelas duas possibilidades
 						if dist < linha_pontuacao[poss1_linha]["dist"]:
 							linha_pontuacao[poss1_linha]["dist"] = dist
-				else: # calcular distancia somente entre o ponto e a possibilidade
+				if soUmPonto: 
+					# calcular distancia somente entre o ponto e a possibilidade
 					dist = distance_to_point(ponto,[poss1_lat,poss1_lng])
 					if dist < linha_pontuacao[poss1_linha]["dist"]:
 							linha_pontuacao[poss1_linha]["dist"] = dist
+							print "dist " + poss1_linha + ": " + str(dist)
+					else:
+						print "dist"
+						print poss1_linha + ": " + str(dist) + " >= " + str(linha_pontuacao[poss1_linha]["dist"])
 			#calcula Req e v
 			req_inv = 0
 			print "linha_pontuacao"
