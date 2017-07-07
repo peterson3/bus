@@ -19,9 +19,9 @@ grid = {} #guarda posicoes das trajetorias ja conhecidas ----> grid[key].append(
 
 lock = threading.RLock()
 
-num_pontos = 5 #numero de pontos para olhar para tras
+num_pontos = 20 #numero de pontos para olhar para tras
 
-n_dec = '2' #numero de casas decimais da key
+n_dec = '3' #numero de casas decimais da key
 
 f_log_agua = open("log_agua.txt","w")
 f_log_dist = open("log_dist.txt","w")
