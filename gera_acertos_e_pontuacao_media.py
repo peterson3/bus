@@ -1,4 +1,4 @@
-f_name = "C:/Users/IBM_ADMIN/Documents/tcc/testes/455-20p-2cd-20170708202822.txt"
+f_name = "C:/Users/IBM_ADMIN/Documents/tcc/testes/908-20p-2cd-20170709100747.txt"
 f = open(f_name)
 
 fw = open(f_name+"RESULTADOS","w")
@@ -8,7 +8,7 @@ num_logs = 0
 acertos = 0
 erros = 0
 
-elimina_pontuacao_vazia = True
+elimina_pontuacao_vazia = False
 
 for linha in f:
 	linha = linha.replace("\n","")
