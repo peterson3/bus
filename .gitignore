@@ -50,3 +50,6 @@ Temporary Items
 *.bak
 *.bak
 *.bak
+*.pyc
+log_agua.txt
+log_dist.txt

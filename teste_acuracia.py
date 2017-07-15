@@ -22,9 +22,9 @@ grid = {} #guarda posicoes das trajetorias ja conhecidas ----> grid[key].append(
 
 lock = threading.RLock()
 
-num_pontos = 20 #numero de pontos para olhar para tras
+num_pontos = 5 #numero de pontos para olhar para tras
 
-n_dec = '2' #numero de casas decimais da key
+n_dec = '3' #numero de casas decimais da key
 
 f_log_agua = open("log_agua.txt","w")
 f_log_dist = open("log_dist.txt","w")
@@ -230,8 +230,8 @@ def encontrar_linhas():
 def get_dados():
 	while(True):
 		start = time.time()
-		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "C:/Users/IBM_ADMIN/Documents/tcc/bus3.txt")
-		fr = open("C:/Users/IBM_ADMIN/Documents/tcc/bus3.txt")
+		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "C:/Users/IBM_ADMIN/Documents/tcc/bus5.txt")
+		fr = open("C:/Users/IBM_ADMIN/Documents/tcc/bus5.txt")
 		for linha in fr:
 			campos = linha.split(",")
 			ordem = campos[1]
