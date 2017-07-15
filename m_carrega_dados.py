@@ -13,9 +13,7 @@ def carrega_linha(linha_num):
 			else:
 				variaveis.grid[key] = []
 		except Exception,e: 
-			print linha_num
-			print ponto
-			print str(e)
+			pass
 
 def carrega_grid():
 	carrega_linha("864")

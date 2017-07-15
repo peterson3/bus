@@ -32,10 +32,10 @@ def acha_linha_4(pontos):
 		key = format(lat,'.'+variaveis.n_dec+'f')+","+format(lng,'.'+variaveis.n_dec+'f')
 		#print "key"
 		#print key
-		if key in grid and len(grid[key]) > 0: # se existe alguma linha passando pela celula do ponto
-			possibilidades = grid[key] # busca linhas que passam pela mesma celula que o ponto
+		if key in variaveis.grid and len(variaveis.grid[key]) > 0: # se existe alguma linha passando pela celula do ponto
+			possibilidades = variaveis.grid[key] # busca linhas que passam pela mesma celula que o ponto
 			if len(possibilidades) == 0: # se nao ha linha possivel
-				pontuacao_maxima -= 100/num_pontos
+				pontuacao_maxima -= 100/variaveis.num_pontos
 			#print "possibilidades"
 			#print possibilidades
 			linha_pontuacao = {} # guarda a pontuacao de uma linha e a distancia
@@ -94,7 +94,7 @@ def acha_linha_4(pontos):
 				else:
 					dict_d_linhas[linha] = i
 		else: # se nao ha pontos na celula
-			pontuacao_maxima -= 100/num_pontos
+			pontuacao_maxima -= 100/variaveis.num_pontos
 	# calcula soma da pontuacao de todas as linhas
 	soma = 0
 	for linha in dict_d_linhas:
@@ -120,7 +120,7 @@ def encontrar_linhas():
 	with variaveis.lock:
 		for ordem in (ordem for ordem in variaveis.dict_ordem if variaveis.dict_ordem[ordem]["linha"]["confiavel"] == False):
 				#se numero de pontos condiz com o necessario p/ analise
-				if len(variaveis.dict_ordem[ordem]["pontos"]) == num_pontos:
+				if len(variaveis.dict_ordem[ordem]["pontos"]) == variaveis.num_pontos:
 					linha = acha_linha_4(variaveis.dict_ordem[ordem]["pontos"],variaveis.n_dec)
 					if linha != "":
 						print "ordem {ordem} pertence a linha {linha}".format(ordem = ordem, linha = linha)
@@ -132,14 +132,14 @@ def encontrar_linhas():
 								variaveis.dict_ordem[ordem]["linha"]["num"] = linha
 								variaveis.dict_ordem[ordem]["linha"]["confiavel"] = False
 								if linha_antiga != '':
-									dict_linha[linha_antiga].remove(ordem)
+									variaveis.dict_linha[linha_antiga].remove(ordem)
 						else:
 							print "ordem {ordem} nao estava no dicionario".format(ordem = ordem)
-						if linha in dict_linha:
-							if ordem not in dict_linha[linha]:
-								dict_linha[linha].append(ordem)
+						if linha in variaveis.dict_linha:
+							if ordem not in variaveis.dict_linha[linha]:
+								variaveis.dict_linha[linha].append(ordem)
 						else:
-							dict_linha[linha] = [ordem]
+							variaveis.dict_linha[linha] = [ordem]
 
 
 def t_encontrar_linhas():
