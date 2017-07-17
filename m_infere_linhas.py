@@ -1,5 +1,6 @@
 import time
 import variaveis
+import math
 
 def distance_to_line(p,pr1,pr2):
 	#print "pontos"

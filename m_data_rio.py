@@ -18,7 +18,7 @@ def get_dados():
 				lat = float(campos[3].replace('"',''))
 				lng = float(campos[4].replace('"',''))				
 			except:
-				print linha + "Linha Inicial" #linha inicial caira aqui
+				#print linha + "Linha Inicial" #linha inicial caira aqui
 				continue
 			#verifica se ponto eh agua. ignora ponto caso positivo. comentado por questoes de performance
 			#if is_agua(str(lat),str(lng)):
@@ -30,7 +30,7 @@ def get_dados():
 							#verifica se onibus se moveu
 							inserir = True
 							if(datetime.datetime.strptime(data, '%m-%d-%Y %H:%M:%S') < datetime.datetime.now() - datetime.timedelta(hours=3)):
-								print datetime.datetime.strptime(data, '%m-%d-%Y %H:%M:%S')
+								#print datetime.datetime.strptime(data, '%m-%d-%Y %H:%M:%S')
 								inserir = False
 							for ponto in variaveis.dict_ordem[ordem]["pontos"]:
 								if lat == ponto[0] and lng == ponto[1]:
