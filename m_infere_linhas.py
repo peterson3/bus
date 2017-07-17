@@ -121,7 +121,7 @@ def encontrar_linhas():
 		for ordem in (ordem for ordem in variaveis.dict_ordem if variaveis.dict_ordem[ordem]["linha"]["confiavel"] == False):
 				#se numero de pontos condiz com o necessario p/ analise
 				if len(variaveis.dict_ordem[ordem]["pontos"]) == variaveis.num_pontos:
-					linha = acha_linha_4(variaveis.dict_ordem[ordem]["pontos"],variaveis.n_dec)
+					linha = acha_linha_4(variaveis.dict_ordem[ordem]["pontos"])
 					if linha != "":
 						print "ordem {ordem} pertence a linha {linha}".format(ordem = ordem, linha = linha)
 						#verifica se linha mudou p/ atualizar dicionarios

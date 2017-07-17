@@ -1,5 +1,6 @@
 import web
 import variaveis
+import json
 
 class get_linha:
 	def GET(self, linha):

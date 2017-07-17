@@ -18,4 +18,4 @@ carrega_grid()
 threading.Thread(target = get_dados).start()
 threading.Thread(target = t_encontrar_linhas).start()
 
-
+threading.Thread(target = comeca_server).start()
