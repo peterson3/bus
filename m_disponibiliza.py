@@ -74,6 +74,12 @@ class list_linhas:
 				retorno = retorno + '["' + campos[0] + '","' + campos[1]+ '",' + campos[2] + "," + campos[3].replace('"','') + "," + campos[4].replace('"','') + "," + campos[5][:-1] + ",0],"
 			return retorno[:-1]+"]}"
 
+class MyApplication(web.application):
+    def run(self, port=8080, *middleware):
+        func = self.wsgifunc(*middleware)
+        return web.httpserver.runsimple(func, ('0.0.0.0', port))
+		
 def comeca_server():
-	app = web.application(variaveis.urls, globals())
-	app.run()
+	#app = web.application(variaveis.urls, globals())
+	app = MyApplication(variaveis.urls, globals())
+	app.run(port=8888)

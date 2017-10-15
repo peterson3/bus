@@ -1,7 +1,7 @@
 import variaveis
 
 def carrega_linha(linha_num):
-	f = open("C:/Users/IBM_ADMIN/Documents/tcc/linhas/boas/{linha_num}.csv".format(linha_num = linha_num))
+	f = open("linhas/{linha_num}.csv".format(linha_num = linha_num))
 	f.readline()
 	for ponto in f:
 		try:
@@ -12,10 +12,12 @@ def carrega_linha(linha_num):
 				variaveis.grid[key].append((linha_num,lat,lng))
 			else:
 				variaveis.grid[key] = []
-		except Exception,e: 
+		except Exception,e:
 			pass
 
 def carrega_grid():
+	carrega_linha("864a")
+	"""
 	carrega_linha("864")
 	#carrega_linha("864b")
 	carrega_linha("908")
@@ -29,3 +31,4 @@ def carrega_grid():
 	carrega_linha("326")
 	#carrega_linha("326b")
 	carrega_linha("298")
+"""

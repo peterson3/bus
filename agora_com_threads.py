@@ -50,8 +50,8 @@ def encontrar_linhas():
 
 def get_dados():
 	while(True):
-		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "/home/tr569752/bus/bus.txt")
-		fr = open("/home/tr569752/bus/bus.txt")
+		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "onibus/bus.txt")
+		fr = open("onibus/bus.txt")
 		for linha in fr:
 			campos = linha.split(",")
 			ordem = campos[1]
@@ -263,7 +263,7 @@ def acha_linha_2(pontos):
 	return melhor_linha
 
 def carrega_linha(linha_num):
-	f = open("/home/tr569752/bus/linhas/{linha_num}.csv".format(linha_num = linha_num))
+	f = open("linhas/{linha_num}.csv".format(linha_num = linha_num))
 	f.readline()
 	for ponto in f:
 		lng = float(ponto.split(" ")[0].split("(")[1])
@@ -330,7 +330,7 @@ f.close()
 fw = open("linhas.txt","w")
 for linha in ["422","298","864a","864b","326a","326b"]:
 	fw.write("chave;linha;latitude;longitude\n")
-	f = open("/home/tr569752/bus/{linha_num}.csv".format(linha_num = linha))
+	f = open("bus/{linha_num}.csv".format(linha_num = linha))
 	f.readline()
 	for ponto in f:
 		lng = ponto.split(" ")[0].split("(")[1]

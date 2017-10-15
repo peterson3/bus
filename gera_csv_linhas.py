@@ -1,7 +1,7 @@
 linha = "422"
 
-f = open("C:/Users/IBM_ADMIN/Documents/tcc/linhas/boas/"+linha+".csv")
-fw = open("C:/Users/IBM_ADMIN/Documents/tcc/linhas/boas/csv_"+linha+".csv","w")
+f = open("linhas/boas/"+linha+".csv")
+fw = open("linhas/boas/csv_"+linha+".csv","w")
 
 for l in f:
 	try:

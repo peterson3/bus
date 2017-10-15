@@ -7,8 +7,8 @@ import datetime
 def get_dados():
 	while(True):
 		start = time.time()
-		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "C:/Users/IBM_ADMIN/Documents/tcc/bus5.txt")
-		fr = open("C:/Users/IBM_ADMIN/Documents/tcc/bus5.txt")
+		urllib.urlretrieve ("http://dadosabertos.rio.rj.gov.br/apiTransporte/apresentacao/csv/onibus.cfm", "recuperado/bus5.txt")
+		fr = open("recuperado/bus5.txt")
 		for linha in fr:
 			campos = linha.split(",")
 			ordem = campos[1]

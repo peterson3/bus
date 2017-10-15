@@ -1,5 +1,5 @@
 for linha_nome in ["326","422","455","778","864","908"]:
-	f_name = "C:/Users/IBM_ADMIN/Documents/tcc/testes/testes_finais/{l}-10p-3cd-20170710093227.txt".format(l=linha_nome)
+	f_name = "testes/testes_finais/{l}-10p-3cd-20170710093227.txt".format(l=linha_nome)
 	f = open(f_name)
 	
 	fw = open(f_name+"RESULTADOS_LIMPOS","w")
