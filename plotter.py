@@ -2,13 +2,14 @@ import gmplot
 import googlemaps
 from datetime import datetime
 
-f = open("/home/Natalia/tcc/422.csv")
+f = open("linhas/422.csv")
 
 lat = []
 lng = []
 
 for linha in f:
-	if linha != '"st_astext"\r\n':
+	#print linha
+	if linha != '"st_astext"\n':
 		spl = linha.split()
 		o = float(spl[0].split("(")[1])
 		lng.append(o)
@@ -39,7 +40,7 @@ geocode_result = gmaps.geocode('1600 Amphitheatre Parkway, Mountain View, CA')
 
 #####agua
 
-https://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=AIzaSyA1Ta280qT3yWu9ZnkNrDtJjUWlOSb3FYs
+#https://maps.googleapis.com/maps/api/geocode/json?latlng=40.714224,-73.961452&key=AIzaSyA1Ta280qT3yWu9ZnkNrDtJjUWlOSb3FYs
 	
 reverse_geocode_result = gmaps.reverse_geocode((-22.947157, -43.171191))
 
